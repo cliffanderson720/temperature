@@ -1,8 +1,10 @@
-import requests
 import csv
 import sys
 import os
 import time
+import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 from thermocouple import Arduino
 
 
@@ -10,17 +12,26 @@ TEMP_LOG = 'temp.csv'
 
 
 def get_weather():
-    response = requests.get(
-        'https://api.openweathermap.org/data/2.5/weather',
-        params={'q': 'Pittsburgh',
-                'APPID': '6ec427d33d4c26b4a5ba0a8ec4a51698',
-                'units': 'imperial'})
+    try:
+        retry_strategy = Retry(total=5, backoff_factor=1)
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        http = requests.Session()
+        http.mount('https://', adapter)
+        response = http.request(
+                'GET',
+                'https://api.openweathermap.org/data/2.5/weather',
+                 params={'q': 'Pittsburgh',
+                        'APPID': '6ec427d33d4c26b4a5ba0a8ec4a51698',
+                        'units': 'imperial'})
+
+    except requests.exceptions.ConnectionError:
+        raise Exception('You cannot connect right now. Retry your internet connection')
+
     if not response:
         print('Failed')
         sys.exit(response.status_code)
     json_response = response.json()
     return json_response
-
 
 def get_time():
     return time.strftime('%Y-%m-%d %H:%M')
