@@ -39,7 +39,7 @@ class Temperature:
         return response.json()
 
     @staticmethod
-    def get_time():
+    def get_POSIX_time():
         return time.strftime('%Y-%m-%d %H:%M')
 
     def compile_reading(self):
@@ -51,7 +51,7 @@ class Temperature:
         
         wind = {k:json_response['wind'][k] for k in ('speed','deg')}
         out.update(wind)
-        out.update({'time': self.get_time(),
+        out.update({'time': self.get_POSIX_time(),
                     'thermo': Arduino().get_temp(),
                     })
         return out
