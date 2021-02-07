@@ -48,7 +48,9 @@ class Temperature:
         out = {k: air[k] for k in air.keys() if k in ['temp', 'humidity']}
         # make the weather temp more clear
         out['outside'] = out.pop('temp')
-        out.update(**json_response['wind'])
+        
+        wind = {k:json_response['wind'][k] for k in ('speed','deg')}
+        out.update(wind)
         out.update({'time': self.get_time(),
                     'thermo': Arduino().get_temp(),
                     })
