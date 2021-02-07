@@ -16,7 +16,7 @@ HOURS_PER_S = 60 * 60
 class Temperature:
     def __init__(self, params="params.yaml"):
         with open(params) as request_params:
-            self.request_params = yaml.load(request_params, Loader=yaml.CFullLoader)
+            self.request_params = yaml.load(request_params, Loader=yaml.FullLoader)
 
     def get_weather(self):
         try:
