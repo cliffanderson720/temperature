@@ -1,0 +1,33 @@
+---
+title: "temp_analysis"
+author: "canderson"
+date: "February 2, 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+```
+
+```{r}
+df <- read.csv2('~/PycharmProjects/Temperature/temp.csv',sep=",")
+str(df)
+df$outside <- as.numeric(df$outside)
+df$humidity <- as.numeric(df$humidity)
+df$thermo <- as.numeric(df$thermo)
+df$speed <- as.numeric(df$speed)
+df$time <- as.POSIXct(df$time)
+df$thermostat <- as.numeric(df$thermostat)
+```
+
+```{r}
+ggplot(df,aes(time,outside,color=thermo))+
+  geom_point()
+```
+```{r}
+ggplot(df,aes(time,thermo))+geom_line() +
+    geom_point(aes(time,outside)) +
+    geom_point(aes(time,speed)) +
+    geom_point(aes(time,thermostat))
+```
