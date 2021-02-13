@@ -76,4 +76,4 @@ if __name__ == '__main__':
     temp = Temperature()
     while True:
         temp.write_line()
-        time.sleep(0.25 * HOURS_PER_S)
+        time.sleep(150)
