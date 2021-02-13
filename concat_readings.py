@@ -18,5 +18,4 @@ def concat_readings(glob_pattern='2*_temp.csv', write=True):
 
 
 if __name__ == '__main__':
-    import sys
-    df = concat_readings(sys.argv[1])
+    concat_readings()
