@@ -24,6 +24,7 @@ class Temperature:
     def __init__(self, params="params.yaml"):
         with open(params) as request_params:
             self.request_params = yaml.load(request_params, Loader=yaml.FullLoader)
+        self.thermostat = float(input('What is the current thermostat setpoint? '))
 
     def get_weather(self):
         try:
@@ -56,6 +57,7 @@ class Temperature:
         out.update(wind)
         out.update({'time': get_POSIX_time(),
                     'thermo': Arduino().get_temp(),
+                    'thermostat': self.thermostat,
                     })
         return out
 
