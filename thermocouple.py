@@ -16,12 +16,17 @@ class Arduino:
         temps = []
         try:
             for i in range(readings):
-                line = self.connection.readline().decode('utf-8').strip()
+                try:
+                    line = self.connection.readline().decode('utf-8').strip()
+                except UnicodeDecodeError as UDE:
+                    print(UDE)
+                    self.connection.flushInput()
+                    continue
                 if i > 1:
                     temps.append(float(line))
         except KeyboardInterrupt:
             return temps
-        temp = round(sum(temps)/len(temps),2)
+        temp = round(sum(temps)/len(temps), 2)
         print(f'Arduino temperature: {temp} degF')
         return temp
 
