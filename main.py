@@ -4,6 +4,8 @@ import os
 import time
 import yaml
 import requests
+import datetime
+import itertools
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 from thermocouple import Arduino
@@ -21,10 +23,56 @@ HOURS_PER_S = 60 * 60
 
 
 class Temperature:
-    def __init__(self, params="params.yaml"):
+    def __init__(self, params="params.yaml", setpoint_override=None):
         with open(params) as request_params:
             self.request_params = yaml.load(request_params, Loader=yaml.FullLoader)
-        self.thermostat = float(input('What is the current thermostat setpoint? '))
+        self.setpoint_schedule = self.request_params['setpoints']
+
+        # Ask user for a setpoint schedule if none is given in the config. Allow manual override.
+        self.setpoint = None
+        if setpoint_override:
+            self.setpoint = setpoint_override
+            print(f'Using specified setpoint of {setpoint_override}')
+        if not setpoint_override and not self.setpoint_schedule:
+            self.setpoint = float(input('What is the current thermostat setpoint? '))
+
+    def get_setpoint(self, setpoints):
+        # if the setpoint setpoint has already been given, return it immediately 
+        if self.setpoint:
+            return self.setpoint
+
+        # Else, figure it out from the schedule
+        now = datetime.datetime.now()
+        now = now.hour + now.minute / 60
+
+        def time_in_range(start, end, x):
+            """Return true if x is in the range [start, end]"""
+            # https://stackoverflow.com/questions/10747974/how-to-check-if-the-current-time-is-in-range-in-python
+            if start <= end:
+                return start <= x <= end
+            else:
+                return start <= x or x <= end
+
+        # build a list of times and setpoints from the yaml
+        times = list(setpoints.keys())
+        temps = list(setpoints.values())
+
+        # make a cyclic iterator so we can check all contiguous pairs of times,
+        # including wrapping from the latest around to the earliest time
+        time_loop = itertools.cycle(times)
+        temp_loop = itertools.cycle(temps)
+
+        early_time = next(time_loop)
+        for i in range(len(times) + 1):
+            setpoint = next(temp_loop)
+
+            # if the current time is later than the listed time, set the new temperature
+            late_time = next(time_loop)
+            if time_in_range(early_time, late_time, now):
+                # return the setpoint when we find it
+                return setpoint
+
+            early_time = late_time
 
     def get_weather(self):
         try:
@@ -57,7 +105,7 @@ class Temperature:
         out.update(wind)
         out.update({'time': get_POSIX_time(),
                     'thermo': Arduino().get_temp(),
-                    'thermostat': self.thermostat,
+                    'setpoint': self.get_setpoint(self.setpoint_schedule),
                     })
         return out
 
@@ -73,7 +121,13 @@ class Temperature:
 
 
 if __name__ == '__main__':
-    temp = Temperature()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--setpoint_override', type=float, default=None,
+                        help='Setpoint temperature of the heating system')
+    args = parser.parse_args()
+
+    temp = Temperature(setpoint_override = args.setpoint_override)
     while True:
         temp.write_line()
         time.sleep(150)
