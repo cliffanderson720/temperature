@@ -102,9 +102,12 @@ class Temperature:
         out['outside'] = out.pop('temp')
         
         wind = {k:json_response['wind'][k] for k in ('speed','deg')}
-        out.update(wind)
+        clouds = json_response.get('clouds',0)
+        if clouds:
+            clouds = clouds.get('all',0)
+        out.update({**wind,'clouds':clouds})
         out.update({'time': get_POSIX_time(),
-                    'thermo': Arduino().get_temp(),
+                    'thermo': Arduino().get_temp(), # update this method to return na when the arduino isn't plugged in.
                     'setpoint': self.get_setpoint(self.setpoint_schedule),
                     })
         return out
